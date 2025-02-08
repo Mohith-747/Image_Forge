@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Circle, Rect, Triangle, IText } from "fabric";
+import { Canvas as FabricCanvas, Circle, Rect, Triangle, IText, Image as FabricImage } from "fabric";
 import { Circle as CircleIcon, Square, Triangle as TriangleIcon, Type, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import "../styles/canvas.css";
@@ -98,7 +98,7 @@ export const Canvas = () => {
       
       img.onload = () => {
         // Create a new Fabric Image instance from the loaded HTML Image
-        const fabricImage = new fabric.Image(img, {
+        const fabricImage = new FabricImage(img, {
           left: 100,
           top: 100,
         });
