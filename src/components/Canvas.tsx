@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Circle, Rect, Triangle } from "fabric";
+import { Canvas as FabricCanvas, Circle, Rect, Triangle, IText } from "fabric";
 import { Circle as CircleIcon, Square, Triangle as TriangleIcon, Type, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import "../styles/canvas.css";
@@ -69,13 +69,14 @@ export const Canvas = () => {
 
   const addText = () => {
     if (!canvas) return;
-    const text = canvas.add(new fabric.IText("Click to edit text", {
+    const text = new IText("Click to edit text", {
       left: 100,
       top: 100,
       fontFamily: "sans-serif",
       fill: "#1a1a1a",
       fontSize: 20,
-    }));
+    });
+    canvas.add(text);
     canvas.setActiveObject(text);
     canvas.renderAll();
   };
@@ -89,7 +90,8 @@ export const Canvas = () => {
     reader.onload = (event) => {
       if (!event.target?.result) return;
 
-      fabric.Image.fromURL(event.target.result.toString(), (img) => {
+      const imgUrl = event.target.result.toString();
+      FabricCanvas.Image.fromURL(imgUrl, (img) => {
         img.scaleToWidth(200);
         canvas.add(img);
         canvas.renderAll();
