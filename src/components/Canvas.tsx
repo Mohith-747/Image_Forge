@@ -91,12 +91,25 @@ export const Canvas = () => {
       if (!event.target?.result) return;
 
       const imgUrl = event.target.result.toString();
-      FabricCanvas.Image.fromURL(imgUrl, (img) => {
-        img.scaleToWidth(200);
-        canvas.add(img);
+      
+      // Create a new HTML Image element
+      const img = new Image();
+      img.src = imgUrl;
+      
+      img.onload = () => {
+        // Create a new Fabric Image instance from the loaded HTML Image
+        const fabricImage = new fabric.Image(img, {
+          left: 100,
+          top: 100,
+        });
+        
+        // Scale the image to a reasonable size
+        fabricImage.scaleToWidth(200);
+        
+        canvas.add(fabricImage);
         canvas.renderAll();
         toast("Image added!");
-      });
+      };
     };
 
     reader.readAsDataURL(file);
