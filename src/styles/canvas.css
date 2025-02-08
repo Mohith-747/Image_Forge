@@ -1,6 +1,9 @@
 
 .canvas-container {
   @apply relative w-full h-full min-h-[600px] bg-white rounded-lg shadow-sm border border-gray-100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .toolbar {
@@ -22,10 +25,13 @@
 
 .canvas-wrapper {
   @apply flex-1 p-8;
+  height: calc(100vh - 100px);
 }
 
 .sidebar {
   @apply w-64 bg-white border-r border-gray-100 p-4;
+  height: calc(100vh - 100px);
+  overflow-y: auto;
 }
 
 .element-button {

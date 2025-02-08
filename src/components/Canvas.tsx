@@ -1,7 +1,15 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Circle, Rect, Triangle, IText, Image as FabricImage } from "fabric";
-import { Circle as CircleIcon, Square, Triangle as TriangleIcon, Type, Image as ImageIcon } from "lucide-react";
+import { Canvas as FabricCanvas, Circle, Rect, Triangle, IText, Image as FabricImage, Line } from "fabric";
+import { 
+  Circle as CircleIcon, 
+  Square, 
+  Triangle as TriangleIcon, 
+  Type, 
+  Image as ImageIcon,
+  Save,
+  Minus
+} from "lucide-react";
 import { toast } from "sonner";
 import "../styles/canvas.css";
 
@@ -9,21 +17,33 @@ export const Canvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<string>("select");
+  const [fontSize, setFontSize] = useState<number>(20);
+  const [fontFamily, setFontFamily] = useState<string>("Arial");
+  const [fontColor, setFontColor] = useState<string>("#000000");
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
     const fabricCanvas = new FabricCanvas(canvasRef.current, {
-      width: 800,
-      height: 600,
+      width: window.innerWidth * 0.6,
+      height: window.innerHeight * 0.8,
       backgroundColor: "#ffffff",
     });
 
     setCanvas(fabricCanvas);
     toast("Canvas ready!");
 
+    // Make canvas responsive
+    window.addEventListener('resize', () => {
+      fabricCanvas.setDimensions({
+        width: window.innerWidth * 0.6,
+        height: window.innerHeight * 0.8
+      });
+    });
+
     return () => {
       fabricCanvas.dispose();
+      window.removeEventListener('resize', () => {});
     };
   }, []);
 
@@ -58,6 +78,12 @@ export const Canvas = () => {
           height: 100,
         });
         break;
+      case "line":
+        shape = new Line([50, 100, 200, 100], {
+          stroke: '#000000',
+          strokeWidth: 2
+        });
+        break;
       default:
         return;
     }
@@ -72,9 +98,9 @@ export const Canvas = () => {
     const text = new IText("Click to edit text", {
       left: 100,
       top: 100,
-      fontFamily: "sans-serif",
-      fill: "#1a1a1a",
-      fontSize: 20,
+      fontFamily: fontFamily,
+      fill: fontColor,
+      fontSize: fontSize,
     });
     canvas.add(text);
     canvas.setActiveObject(text);
@@ -92,18 +118,15 @@ export const Canvas = () => {
 
       const imgUrl = event.target.result.toString();
       
-      // Create a new HTML Image element
       const img = new Image();
       img.src = imgUrl;
       
       img.onload = () => {
-        // Create a new Fabric Image instance from the loaded HTML Image
         const fabricImage = new FabricImage(img, {
           left: 100,
           top: 100,
         });
         
-        // Scale the image to a reasonable size
         fabricImage.scaleToWidth(200);
         
         canvas.add(fabricImage);
@@ -114,6 +137,38 @@ export const Canvas = () => {
 
     reader.readAsDataURL(file);
   };
+
+  const saveCanvas = () => {
+    if (!canvas) return;
+    const dataURL = canvas.toDataURL({
+      format: 'png',
+      quality: 1
+    });
+    const link = document.createElement('a');
+    link.download = 'canvas-image.png';
+    link.href = dataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast("Canvas saved!");
+  };
+
+  const updateSelectedObject = () => {
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (activeObject && activeObject.type === 'i-text') {
+      activeObject.set({
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        fill: fontColor
+      });
+      canvas.renderAll();
+    }
+  };
+
+  useEffect(() => {
+    updateSelectedObject();
+  }, [fontFamily, fontSize, fontColor]);
 
   return (
     <div className="workspace">
@@ -129,6 +184,9 @@ export const Canvas = () => {
           <button className="element-button" onClick={() => addShape("triangle")}>
             <TriangleIcon size={16} /> Triangle
           </button>
+          <button className="element-button" onClick={() => addShape("line")}>
+            <Minus size={16} /> Line
+          </button>
           <button className="element-button" onClick={addText}>
             <Type size={16} /> Text
           </button>
@@ -141,6 +199,40 @@ export const Canvas = () => {
               onChange={handleImageUpload}
             />
           </label>
+          <button className="element-button" onClick={saveCanvas}>
+            <Save size={16} /> Save Canvas
+          </button>
+
+          <div className="mt-4 space-y-2">
+            <h3 className="text-sm font-semibold">Text Options</h3>
+            <select 
+              className="w-full p-2 border rounded"
+              value={fontFamily}
+              onChange={(e) => setFontFamily(e.target.value)}
+            >
+              <option value="Arial">Arial</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Courier New">Courier New</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Verdana">Verdana</option>
+            </select>
+
+            <input 
+              type="number"
+              className="w-full p-2 border rounded"
+              value={fontSize}
+              onChange={(e) => setFontSize(Number(e.target.value))}
+              min="8"
+              max="72"
+            />
+
+            <input 
+              type="color"
+              className="w-full p-1 border rounded"
+              value={fontColor}
+              onChange={(e) => setFontColor(e.target.value)}
+            />
+          </div>
         </div>
       </div>
       <div className="canvas-wrapper">
