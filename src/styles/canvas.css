@@ -1,0 +1,34 @@
+
+.canvas-container {
+  @apply relative w-full h-full min-h-[600px] bg-white rounded-lg shadow-sm border border-gray-100;
+}
+
+.toolbar {
+  @apply flex items-center gap-2 p-4 bg-white border-b border-gray-100;
+}
+
+.toolbar-button {
+  @apply flex items-center justify-center w-10 h-10 rounded-lg transition-all
+         hover:bg-gray-50 active:bg-gray-100 text-gray-700;
+}
+
+.toolbar-button.active {
+  @apply bg-gray-50 text-blue-500;
+}
+
+.workspace {
+  @apply flex min-h-screen bg-gray-50;
+}
+
+.canvas-wrapper {
+  @apply flex-1 p-8;
+}
+
+.sidebar {
+  @apply w-64 bg-white border-r border-gray-100 p-4;
+}
+
+.element-button {
+  @apply flex items-center gap-2 w-full p-2 rounded-lg transition-all
+         hover:bg-gray-50 text-sm text-gray-700;
+}
