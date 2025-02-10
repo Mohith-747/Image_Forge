@@ -285,11 +285,16 @@ export const Canvas = () => {
       return;
     }
 
-    if (direction === 'up') {
-      canvas.bringForward(activeObject);
+    const objects = canvas.getObjects();
+    const currentIndex = objects.indexOf(activeObject);
+
+    if (direction === 'up' && currentIndex < objects.length - 1) {
+      objects.splice(currentIndex, 1);
+      objects.splice(currentIndex + 1, 0, activeObject);
       toast("Moved layer forward");
-    } else {
-      canvas.sendBackwards(activeObject);
+    } else if (direction === 'down' && currentIndex > 0) {
+      objects.splice(currentIndex, 1);
+      objects.splice(currentIndex - 1, 0, activeObject);
       toast("Moved layer backward");
     }
 
@@ -305,10 +310,16 @@ export const Canvas = () => {
       return;
     }
 
-    canvas.bringToFront(activeObject);
-    canvas.renderAll();
-    saveState(canvas);
-    toast("Brought to front");
+    const objects = canvas.getObjects();
+    const currentIndex = objects.indexOf(activeObject);
+    
+    if (currentIndex < objects.length - 1) {
+      objects.splice(currentIndex, 1);
+      objects.push(activeObject);
+      canvas.renderAll();
+      saveState(canvas);
+      toast("Brought to front");
+    }
   };
 
   const sendToBack = () => {
@@ -319,10 +330,16 @@ export const Canvas = () => {
       return;
     }
 
-    canvas.sendToBack(activeObject);
-    canvas.renderAll();
-    saveState(canvas);
-    toast("Sent to back");
+    const objects = canvas.getObjects();
+    const currentIndex = objects.indexOf(activeObject);
+    
+    if (currentIndex > 0) {
+      objects.splice(currentIndex, 1);
+      objects.unshift(activeObject);
+      canvas.renderAll();
+      saveState(canvas);
+      toast("Sent to back");
+    }
   };
 
   return (
