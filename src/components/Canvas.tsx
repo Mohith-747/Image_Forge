@@ -10,7 +10,10 @@ import {
   Minus,
   Undo2,
   Redo2,
-  Trash2
+  Trash2,
+  LayersIcon,
+  ArrowUpIcon,
+  ArrowDownIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import "../styles/canvas.css";
@@ -50,6 +53,13 @@ export const Canvas = () => {
 
     fabricCanvas.on('object:modified', () => {
       saveState(fabricCanvas);
+    });
+
+    // Add object added event listener
+    fabricCanvas.on('object:added', (e) => {
+      if (e.target) {
+        toast(`Layer added: ${e.target.type}`);
+      }
     });
 
     return () => {
@@ -259,6 +269,54 @@ export const Canvas = () => {
     updateSelectedObject();
   }, [fontFamily, fontSize, fontColor, elementColor]);
 
+  const moveLayer = (direction: 'up' | 'down') => {
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (!activeObject) {
+      toast("Please select an element first!");
+      return;
+    }
+
+    if (direction === 'up') {
+      activeObject.bringForward();
+      toast("Moved layer forward");
+    } else {
+      activeObject.sendBackwards();
+      toast("Moved layer backward");
+    }
+
+    canvas.renderAll();
+    saveState(canvas);
+  };
+
+  const bringToFront = () => {
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (!activeObject) {
+      toast("Please select an element first!");
+      return;
+    }
+
+    activeObject.bringToFront();
+    canvas.renderAll();
+    saveState(canvas);
+    toast("Brought to front");
+  };
+
+  const sendToBack = () => {
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (!activeObject) {
+      toast("Please select an element first!");
+      return;
+    }
+
+    activeObject.sendToBack();
+    canvas.renderAll();
+    saveState(canvas);
+    toast("Sent to back");
+  };
+
   return (
     <div className="workspace">
       <div className="sidebar">
@@ -367,6 +425,42 @@ export const Canvas = () => {
               value={elementColor}
               onChange={(e) => setElementColor(e.target.value)}
             />
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <h3 className="text-sm font-semibold">Layer Controls</h3>
+            <div className="flex gap-2">
+              <button 
+                className="element-button flex-1" 
+                onClick={() => moveLayer('up')}
+                title="Move Up"
+              >
+                <ArrowUpIcon size={16} /> Move Up
+              </button>
+              <button 
+                className="element-button flex-1" 
+                onClick={() => moveLayer('down')}
+                title="Move Down"
+              >
+                <ArrowDownIcon size={16} /> Move Down
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button 
+                className="element-button flex-1" 
+                onClick={bringToFront}
+                title="Bring to Front"
+              >
+                <LayersIcon size={16} /> Bring to Front
+              </button>
+              <button 
+                className="element-button flex-1" 
+                onClick={sendToBack}
+                title="Send to Back"
+              >
+                <LayersIcon size={16} /> Send to Back
+              </button>
+            </div>
           </div>
         </div>
       </div>
