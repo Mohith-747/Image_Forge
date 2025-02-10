@@ -174,34 +174,42 @@ export const Canvas = () => {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!canvas || !e.target.files || !e.target.files[0]) return;
+    if (!canvas || !e.target.files) return;
 
-    const file = e.target.files[0];
-    const reader = new FileReader();
+    const files = Array.from(e.target.files);
+    
+    for (const file of files) {
+      const reader = new FileReader();
 
-    reader.onload = (event) => {
-      if (!event.target?.result) return;
+      reader.onload = (event) => {
+        if (!event.target?.result) return;
 
-      const imgUrl = event.target.result.toString();
-      
-      const img = new Image();
-      img.src = imgUrl;
-      
-      img.onload = () => {
-        const fabricImage = new FabricImage(img, {
-          left: 100,
-          top: 100,
-        });
+        const imgUrl = event.target.result.toString();
         
-        fabricImage.scaleToWidth(200);
+        const img = new Image();
+        img.src = imgUrl;
         
-        canvas.add(fabricImage);
-        canvas.renderAll();
-        toast("Image added!");
+        img.onload = () => {
+          const fabricImage = new FabricImage(img, {
+            left: Math.random() * 100 + 50,
+            top: Math.random() * 100 + 50,
+          });
+          
+          fabricImage.scaleToWidth(200);
+          
+          canvas.add(fabricImage);
+          canvas.renderAll();
+          saveState(canvas);
+          toast("Image added!");
+
+          if (e.target) {
+            e.target.value = '';
+          }
+        };
       };
-    };
 
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    }
   };
 
   const saveCanvas = (format: 'png' | 'jpeg' | 'html') => {
@@ -278,10 +286,10 @@ export const Canvas = () => {
     }
 
     if (direction === 'up') {
-      activeObject.bringForward();
+      canvas.bringForward(activeObject);
       toast("Moved layer forward");
     } else {
-      activeObject.sendBackwards();
+      canvas.sendBackwards(activeObject);
       toast("Moved layer backward");
     }
 
@@ -297,7 +305,7 @@ export const Canvas = () => {
       return;
     }
 
-    activeObject.bringToFront();
+    canvas.bringToFront(activeObject);
     canvas.renderAll();
     saveState(canvas);
     toast("Brought to front");
@@ -311,7 +319,7 @@ export const Canvas = () => {
       return;
     }
 
-    activeObject.sendToBack();
+    canvas.sendToBack(activeObject);
     canvas.renderAll();
     saveState(canvas);
     toast("Sent to back");
@@ -359,6 +367,7 @@ export const Canvas = () => {
               type="file"
               className="hidden"
               accept="image/*"
+              multiple
               onChange={handleImageUpload}
             />
           </label>
