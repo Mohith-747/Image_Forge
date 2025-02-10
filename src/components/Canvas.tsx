@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Circle, Rect, Triangle, IText, Image as FabricImage, Line } from "fabric";
 import { 
@@ -8,7 +7,9 @@ import {
   Type, 
   Image as ImageIcon,
   Save,
-  Minus
+  Minus,
+  Undo2,
+  Redo2
 } from "lucide-react";
 import { toast } from "sonner";
 import "../styles/canvas.css";
@@ -20,6 +21,7 @@ export const Canvas = () => {
   const [fontSize, setFontSize] = useState<number>(20);
   const [fontFamily, setFontFamily] = useState<string>("Arial");
   const [fontColor, setFontColor] = useState<string>("#000000");
+  const historyRef = useRef<{ past: string[], future: string[] }>({ past: [], future: [] });
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -33,6 +35,9 @@ export const Canvas = () => {
     setCanvas(fabricCanvas);
     toast("Canvas ready!");
 
+    // Save initial state
+    saveState(fabricCanvas);
+
     // Make canvas responsive
     window.addEventListener('resize', () => {
       fabricCanvas.setDimensions({
@@ -41,11 +46,48 @@ export const Canvas = () => {
       });
     });
 
+    fabricCanvas.on('object:modified', () => {
+      saveState(fabricCanvas);
+    });
+
     return () => {
       fabricCanvas.dispose();
       window.removeEventListener('resize', () => {});
     };
   }, []);
+
+  const saveState = (fabricCanvas: FabricCanvas) => {
+    const state = JSON.stringify(fabricCanvas.toJSON());
+    historyRef.current.past.push(state);
+    historyRef.current.future = [];
+  };
+
+  const undo = () => {
+    if (!canvas || historyRef.current.past.length <= 1) return;
+    
+    const current = historyRef.current.past.pop();
+    if (current) {
+      historyRef.current.future.push(current);
+      const previousState = historyRef.current.past[historyRef.current.past.length - 1];
+      canvas.loadFromJSON(JSON.parse(previousState), () => {
+        canvas.renderAll();
+        toast("Undo successful!");
+      });
+    }
+  };
+
+  const redo = () => {
+    if (!canvas || !historyRef.current.future.length) return;
+    
+    const nextState = historyRef.current.future.pop();
+    if (nextState) {
+      historyRef.current.past.push(nextState);
+      canvas.loadFromJSON(JSON.parse(nextState), () => {
+        canvas.renderAll();
+        toast("Redo successful!");
+      });
+    }
+  };
 
   const addShape = (type: string) => {
     if (!canvas) return;
@@ -142,6 +184,7 @@ export const Canvas = () => {
     if (!canvas) return;
     const dataURL = canvas.toDataURL({
       format: 'png',
+      multiplier: 1,
       quality: 1
     });
     const link = document.createElement('a');
@@ -175,6 +218,22 @@ export const Canvas = () => {
       <div className="sidebar">
         <h2 className="text-lg font-semibold mb-4">Elements</h2>
         <div className="space-y-2">
+          <div className="flex gap-2 mb-4">
+            <button 
+              className="element-button flex-1" 
+              onClick={undo}
+              title="Undo"
+            >
+              <Undo2 size={16} /> Undo
+            </button>
+            <button 
+              className="element-button flex-1" 
+              onClick={redo}
+              title="Redo"
+            >
+              <Redo2 size={16} /> Redo
+            </button>
+          </div>
           <button className="element-button" onClick={() => addShape("rectangle")}>
             <Square size={16} /> Rectangle
           </button>
@@ -215,6 +274,11 @@ export const Canvas = () => {
               <option value="Courier New">Courier New</option>
               <option value="Georgia">Georgia</option>
               <option value="Verdana">Verdana</option>
+              <option value="Helvetica">Helvetica</option>
+              <option value="Tahoma">Tahoma</option>
+              <option value="Trebuchet MS">Trebuchet MS</option>
+              <option value="Impact">Impact</option>
+              <option value="Comic Sans MS">Comic Sans MS</option>
             </select>
 
             <input 
