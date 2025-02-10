@@ -9,7 +9,8 @@ import {
   Save,
   Minus,
   Undo2,
-  Redo2
+  Redo2,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import "../styles/canvas.css";
@@ -21,6 +22,7 @@ export const Canvas = () => {
   const [fontSize, setFontSize] = useState<number>(20);
   const [fontFamily, setFontFamily] = useState<string>("Arial");
   const [fontColor, setFontColor] = useState<string>("#000000");
+  const [elementColor, setElementColor] = useState<string>("#e2e8f0");
   const historyRef = useRef<{ past: string[], future: string[] }>({ past: [], future: [] });
 
   useEffect(() => {
@@ -89,6 +91,17 @@ export const Canvas = () => {
     }
   };
 
+  const deleteSelected = () => {
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+      canvas.remove(activeObject);
+      canvas.renderAll();
+      toast("Element deleted!");
+      saveState(canvas);
+    }
+  };
+
   const addShape = (type: string) => {
     if (!canvas) return;
 
@@ -98,7 +111,7 @@ export const Canvas = () => {
         shape = new Rect({
           left: 100,
           top: 100,
-          fill: "#e2e8f0",
+          fill: elementColor,
           width: 100,
           height: 100,
         });
@@ -107,7 +120,7 @@ export const Canvas = () => {
         shape = new Circle({
           left: 100,
           top: 100,
-          fill: "#e2e8f0",
+          fill: elementColor,
           radius: 50,
         });
         break;
@@ -115,14 +128,14 @@ export const Canvas = () => {
         shape = new Triangle({
           left: 100,
           top: 100,
-          fill: "#e2e8f0",
+          fill: elementColor,
           width: 100,
           height: 100,
         });
         break;
       case "line":
         shape = new Line([50, 100, 200, 100], {
-          stroke: '#000000',
+          stroke: elementColor,
           strokeWidth: 2
         });
         break;
@@ -133,6 +146,7 @@ export const Canvas = () => {
     canvas.add(shape);
     canvas.setActiveObject(shape);
     canvas.renderAll();
+    saveState(canvas);
   };
 
   const addText = () => {
@@ -180,38 +194,70 @@ export const Canvas = () => {
     reader.readAsDataURL(file);
   };
 
-  const saveCanvas = () => {
+  const saveCanvas = (format: 'png' | 'jpeg' | 'html') => {
     if (!canvas) return;
-    const dataURL = canvas.toDataURL({
-      format: 'png',
-      multiplier: 1,
-      quality: 1
-    });
-    const link = document.createElement('a');
-    link.download = 'canvas-image.png';
-    link.href = dataURL;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast("Canvas saved!");
+    
+    if (format === 'html') {
+      const svgData = canvas.toSVG();
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Canvas Export</title></head>
+        <body style="display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;">
+          ${svgData}
+        </body>
+        </html>
+      `;
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = 'canvas-export.html';
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      const dataURL = canvas.toDataURL({
+        format: format,
+        multiplier: 1,
+        quality: 1
+      });
+      const link = document.createElement('a');
+      link.download = `canvas-image.${format}`;
+      link.href = dataURL;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    toast(`Canvas saved as ${format.toUpperCase()}!`);
   };
 
   const updateSelectedObject = () => {
     if (!canvas) return;
     const activeObject = canvas.getActiveObject();
-    if (activeObject && activeObject.type === 'i-text') {
-      activeObject.set({
-        fontFamily: fontFamily,
-        fontSize: fontSize,
-        fill: fontColor
-      });
+    if (activeObject) {
+      if (activeObject.type === 'i-text') {
+        activeObject.set({
+          fontFamily: fontFamily,
+          fontSize: fontSize,
+          fill: fontColor
+        });
+      } else {
+        // Update color for shapes
+        if (activeObject.type === 'line') {
+          activeObject.set({ stroke: elementColor });
+        } else {
+          activeObject.set({ fill: elementColor });
+        }
+      }
       canvas.renderAll();
     }
   };
 
   useEffect(() => {
     updateSelectedObject();
-  }, [fontFamily, fontSize, fontColor]);
+  }, [fontFamily, fontSize, fontColor, elementColor]);
 
   return (
     <div className="workspace">
@@ -258,9 +304,24 @@ export const Canvas = () => {
               onChange={handleImageUpload}
             />
           </label>
-          <button className="element-button" onClick={saveCanvas}>
-            <Save size={16} /> Save Canvas
+          <button className="element-button" onClick={deleteSelected}>
+            <Trash2 size={16} /> Delete Selected
           </button>
+
+          <div className="mt-4 space-y-2">
+            <h3 className="text-sm font-semibold">Save Options</h3>
+            <div className="flex gap-2">
+              <button className="element-button flex-1" onClick={() => saveCanvas('png')}>
+                Save as PNG
+              </button>
+              <button className="element-button flex-1" onClick={() => saveCanvas('jpeg')}>
+                Save as JPG
+              </button>
+              <button className="element-button flex-1" onClick={() => saveCanvas('html')}>
+                Save as HTML
+              </button>
+            </div>
+          </div>
 
           <div className="mt-4 space-y-2">
             <h3 className="text-sm font-semibold">Text Options</h3>
@@ -295,6 +356,16 @@ export const Canvas = () => {
               className="w-full p-1 border rounded"
               value={fontColor}
               onChange={(e) => setFontColor(e.target.value)}
+            />
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <h3 className="text-sm font-semibold">Element Color</h3>
+            <input 
+              type="color"
+              className="w-full p-1 border rounded"
+              value={elementColor}
+              onChange={(e) => setElementColor(e.target.value)}
             />
           </div>
         </div>
