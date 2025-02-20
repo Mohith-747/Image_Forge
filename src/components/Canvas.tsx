@@ -44,6 +44,8 @@ export const Canvas = () => {
       width: window.innerWidth * 0.6,
       height: window.innerHeight * 0.8,
       backgroundColor: "#ffffff",
+      borderColor: "#000000", // Add border color
+      border: "2px solid black", // Add border style
     });
 
     setCanvas(fabricCanvas);
@@ -374,19 +376,25 @@ export const Canvas = () => {
     e.dataTransfer.setData("text/plain", placeholder);
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLCanvasElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLCanvasElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const placeholder = e.dataTransfer.getData("text/plain");
+    if (!canvas) return;
     
-    if (canvas) {
-      const pointer = canvas.getPointer(e);
+    const placeholder = e.dataTransfer.getData("text/plain");
+    const canvasElement = canvasRef.current;
+    
+    if (canvasElement) {
+      const rect = canvasElement.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
       const text = new IText(placeholder, {
-        left: pointer.x,
-        top: pointer.y,
+        left: x,
+        top: y,
         fontFamily: fontFamily,
         fill: fontColor,
         fontSize: fontSize,
@@ -571,7 +579,7 @@ export const Canvas = () => {
       </div>
       <div className="canvas-wrapper">
         <div 
-          className="canvas-container"
+          className="canvas-container border-2 border-black rounded-lg"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
         >

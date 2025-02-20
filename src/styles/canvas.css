@@ -1,6 +1,6 @@
 
 .canvas-container {
-  @apply relative w-full h-full min-h-[600px] bg-white rounded-lg shadow-sm border border-gray-100;
+  @apply relative w-full h-full min-h-[600px] bg-white rounded-lg shadow-sm;
   display: flex;
   justify-content: center;
   align-items: center;
