@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Circle, Rect, Triangle, IText, Image as FabricImage, Line } from "fabric";
 import { 
@@ -43,10 +44,37 @@ export const Canvas = () => {
     const fabricCanvas = new FabricCanvas(canvasRef.current, {
       width: window.innerWidth * 0.6,
       height: window.innerHeight * 0.8,
-      backgroundColor: "#ffffff",
-      borderColor: "#000000", // Add border color
-      border: "2px solid black", // Add border style
+      backgroundColor: "#ffffff"
     });
+
+    // Add border to the canvas itself
+    const border = new Rect({
+      width: fabricCanvas.width!,
+      height: fabricCanvas.height!,
+      left: fabricCanvas.width! / 2,
+      top: fabricCanvas.height! / 2,
+      fill: 'transparent',
+      stroke: 'black',
+      strokeWidth: 2,
+      selectable: false,
+      evented: false,
+      originX: 'center',
+      originY: 'center'
+    });
+
+    fabricCanvas.add(border);
+    fabricCanvas.renderAll();
+
+    // Update border on window resize
+    const updateBorder = () => {
+      border.set({
+        width: fabricCanvas.width!,
+        height: fabricCanvas.height!,
+        left: fabricCanvas.width! / 2,
+        top: fabricCanvas.height! / 2
+      });
+      fabricCanvas.renderAll();
+    };
 
     setCanvas(fabricCanvas);
     toast("Canvas ready!");
@@ -60,15 +88,15 @@ export const Canvas = () => {
         width: window.innerWidth * 0.6,
         height: window.innerHeight * 0.8
       });
+      updateBorder();
     });
 
     fabricCanvas.on('object:modified', () => {
       saveState(fabricCanvas);
     });
 
-    // Add object added event listener
     fabricCanvas.on('object:added', (e) => {
-      if (e.target) {
+      if (e.target && e.target !== border) {
         toast(`Layer added: ${e.target.type}`);
       }
     });
@@ -579,7 +607,7 @@ export const Canvas = () => {
       </div>
       <div className="canvas-wrapper">
         <div 
-          className="canvas-container border-2 border-black rounded-lg"
+          className="canvas-container"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
         >
