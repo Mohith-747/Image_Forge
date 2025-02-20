@@ -13,7 +13,8 @@ import {
   Trash2,
   LayersIcon,
   ArrowUpIcon,
-  ArrowDownIcon
+  ArrowDownIcon,
+  GripHorizontal
 } from "lucide-react";
 import { toast } from "sonner";
 import "../styles/canvas.css";
@@ -27,6 +28,14 @@ export const Canvas = () => {
   const [fontColor, setFontColor] = useState<string>("#000000");
   const [elementColor, setElementColor] = useState<string>("#e2e8f0");
   const historyRef = useRef<{ past: string[], future: string[] }>({ past: [], future: [] });
+
+  const placeholders = [
+    "{student_name}",
+    "{course_name}",
+    "{issue_date}",
+    "{expiry_date}",
+    "{credit_hours}"
+  ];
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -342,6 +351,56 @@ export const Canvas = () => {
     }
   };
 
+  const addPlaceholder = (placeholder: string) => {
+    if (!canvas) return;
+    
+    const text = new IText(placeholder, {
+      left: 100,
+      top: 100,
+      fontFamily: fontFamily,
+      fill: fontColor,
+      fontSize: fontSize,
+      editable: true,
+    });
+
+    canvas.add(text);
+    canvas.setActiveObject(text);
+    canvas.renderAll();
+    saveState(canvas);
+    toast(`Added placeholder: ${placeholder}`);
+  };
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, placeholder: string) => {
+    e.dataTransfer.setData("text/plain", placeholder);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const placeholder = e.dataTransfer.getData("text/plain");
+    
+    if (canvas) {
+      const pointer = canvas.getPointer(e);
+      const text = new IText(placeholder, {
+        left: pointer.x,
+        top: pointer.y,
+        fontFamily: fontFamily,
+        fill: fontColor,
+        fontSize: fontSize,
+        editable: true,
+      });
+
+      canvas.add(text);
+      canvas.setActiveObject(text);
+      canvas.renderAll();
+      saveState(canvas);
+      toast(`Added placeholder: ${placeholder}`);
+    }
+  };
+
   return (
     <div className="workspace">
       <div className="sidebar">
@@ -488,10 +547,34 @@ export const Canvas = () => {
               </button>
             </div>
           </div>
+
+          <div className="mt-4 space-y-2">
+            <h3 className="text-sm font-semibold">Placeholders</h3>
+            <div className="space-y-2 p-2 border rounded-lg bg-gray-50">
+              {placeholders.map((placeholder) => (
+                <div
+                  key={placeholder}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, placeholder)}
+                  onClick={() => addPlaceholder(placeholder)}
+                  className="element-button cursor-move flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <GripHorizontal size={16} className="text-gray-400" />
+                    {placeholder}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       <div className="canvas-wrapper">
-        <div className="canvas-container">
+        <div 
+          className="canvas-container"
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
           <canvas ref={canvasRef} />
         </div>
       </div>
